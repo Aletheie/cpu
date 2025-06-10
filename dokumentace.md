@@ -57,21 +57,53 @@
 
 ## 5. Instrukční sada
 
-| Mnemonika | Opcode | Syntaxe                | Chování                          |
-| :-------- | :----- | :--------------------- | :------------------------------- |
-| **NOP**   | 0x00   | `NOP`                  | PC←PC+1                          |
-| **ADD**   | 0x01   | `ADD Rx,Ry`            | Rx←Rx+Ry; nastaví Z,N,C; PC+1    |
-| **SUB**   | 0x02   | `SUB Rx,Ry`            | Rx←Rx–Ry; nastaví Z,N,C; PC+1    |
-| **ADDI**  | 0x03   | `ADDI Rx,#Imm16`       | Rx←Rx+imm; nastaví Z,N,C; PC+1   |
-| **SUBI**  | 0x04   | `SUBI Rx,#Imm16`       | Rx←Rx–imm; nastaví Z,N,C; PC+1   |
-| **LOAD**  | 0x05   | `LOAD Rx,[Ry+#Imm16]`  | Rx←M[Ry+imm]; nastaví Z,N; PC+1  |
-| **STORE** | 0x06   | `STORE Rx,[Ry+#Imm16]` | M[Ry+imm]←Rx; PC+1               |
-| **JUMP**  | 0x07   | `JUMP #Imm16`          | PC←PC+imm                        |
-| **JZ**    | 0x08   | `JZ #Imm16`            | pokud Z=1, PC←PC+imm, jinak PC+1 |
-| **JN**    | 0x09   | `JN #Imm16`            | pokud N=1, PC←PC+imm, jinak PC+1 |
-| **JC**    | 0x0A   | `JC #Imm16`            | pokud C=1, PC←PC+imm, jinak PC+1 |
-| **INP**   | 0x0B   | `IN Rx,#port`          | Rx←I/O[port]; nastaví Z,N; PC+1  |
-| **OUTP**  | 0x0C   | `OUT #port,Rx`         | LED_row[port]←Rx[7:0]; PC+1      |
+### 5.1. Základní (NOP)
+
+| Mnemonika | Opcode | Syntaxe | Chování     |
+| :-------- | :----- | :------ | :---------- |
+| **NOP**   | 0x00   | `NOP`   | PC ← PC + 1 |
+
+### 5.2. ALU operace
+
+| Mnemonika | Opcode | Syntaxe          | Chování                                |
+| :-------- | :----- | :--------------- | :------------------------------------- |
+| **ADD**   | 0x10   | `ADD Rx,Ry`      | Rx ← Rx + Ry; nastaví Z, N, C; PC + 1  |
+| **SUB**   | 0x11   | `SUB Rx,Ry`      | Rx ← Rx – Ry; nastaví Z, N, C; PC + 1  |
+| **ADDI**  | 0x12   | `ADDI Rx,#Imm16` | Rx ← Rx + imm; nastaví Z, N, C; PC + 1 |
+| **SUBI**  | 0x13   | `SUBI Rx,#Imm16` | Rx ← Rx – imm; nastaví Z, N, C; PC + 1 |
+
+### 5.3. Bitové & rotace
+
+| Mnemonika | Opcode | Syntaxe          | Chování                                                                              |
+| :-------- | :----- | :--------------- | :----------------------------------------------------------------------------------- |
+| **ROTL**  | 0x14   | `ROTL Rx,#Imm16` | Rx ← (Rx << (Imm16 mod 16)) ∨ (Rx >> (16 – (Imm16 mod 16))); nastaví Z, N, C; PC + 1 |
+| **ROTR**  | 0x15   | `ROTR Rx,#Imm16` | Rx ← (Rx >> (Imm16 mod 16)) ∨ (Rx << (16 – (Imm16 mod 16))); nastaví Z, N, C; PC + 1 |
+| **SHL**   | 0x16   | `SHL Rx,#Imm16`  | Rx ← Rx << (Imm16 mod 16); nastaví Z, N, C; PC + 1                                   |
+| **SHR**   | 0x17   | `SHR Rx,#Imm16`  | Rx ← Rx >> (Imm16 mod 16); nastaví Z, N, C; PC + 1                                   |
+|  |
+
+### 5.4. Paměťové operace
+
+| Mnemonika | Opcode | Syntaxe                | Chování                        |
+| :-------- | :----- | :--------------------- | :----------------------------- |
+| **LOAD**  | 0x20   | `LOAD Rx,[Ry+#Imm16]`  | Rx ← M[Ry + imm]; Z, N; PC + 1 |
+| **STORE** | 0x21   | `STORE Rx,[Ry+#Imm16]` | M[Ry + imm] ← Rx; PC + 1       |
+
+### 5.5. Vstup/Výstup
+
+| Mnemonika | Opcode | Syntaxe        | Chování                              |
+| :-------- | :----- | :------------- | :----------------------------------- |
+| **INP**   | 0x30   | `IN Rx,#port`  | Rx ← I/O[port]; nastaví Z, N; PC + 1 |
+| **OUTP**  | 0x31   | `OUT #port,Rx` | LED_row[port] ← Rx[7..0]; PC + 1     |
+
+### 5.6. Řízení toku
+
+| Mnemonika | Opcode | Syntaxe       | Chování                                  |
+| :-------- | :----- | :------------ | :--------------------------------------- |
+| **JUMP**  | 0x40   | `JUMP #Imm16` | PC ← PC + imm                            |
+| **JZ**    | 0x41   | `JZ #Imm16`   | pokud Z = 1, PC ← PC + imm, jinak PC + 1 |
+| **JN**    | 0x42   | `JN #Imm16`   | pokud N = 1, PC ← PC + imm, jinak PC + 1 |
+| **JC**    | 0x43   | `JC #Imm16`   | pokud C = 1, PC ← PC + imm, jinak PC + 1 |
 
 ## 6. Princip spuštění (Fetch-Execute)
 
