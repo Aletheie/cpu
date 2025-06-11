@@ -65,21 +65,25 @@
 
 ---
 
-## 5.2. ALU operace
+## 5.2. ALU operace (reg–reg)
 
-> **Poznámka:** opcode[3..0] jde přímo na SEL vstup ALU  
-> bit 4=0 → obě operandy z registrů, bit 4=1 → B = Imm16
+| Mnemonika | Opcode |   Syntaxe   |           Chování           |
+| :-------: | :----: | :---------: | :-------------------------: |
+|  **ADD**  |  0x08  | `ADD Rx,Ry` | Rx ← Rx + Ry; Z,N,C; PC + 1 |
+|  **SUB**  |  0x09  | `SUB Rx,Ry` | Rx ← Rx − Ry; Z,N,C; PC + 1 |
+
+---
+
+## 5.3. ALU operace (reg–imm)
 
 | Mnemonika | Opcode |    Syntaxe     |           Chování            |
 | :-------: | :----: | :------------: | :--------------------------: |
-|  **ADD**  |  0x08  |  `ADD Rx,Ry`   | Rx ← Rx + Ry; Z,N,C; PC + 1  |
-|  **SUB**  |  0x09  |  `SUB Rx,Ry`   | Rx ← Rx − Ry; Z,N,C; PC + 1  |
 | **ADDI**  |  0x18  | `ADDI Rx,#Imm` | Rx ← Rx + Imm; Z,N,C; PC + 1 |
 | **SUBI**  |  0x19  | `SUBI Rx,#Imm` | Rx ← Rx − Imm; Z,N,C; PC + 1 |
 
 ---
 
-## 5.3. Bitové operace & rotace (immediate jen)
+## 5.4. Bitové operace & rotace (immediate)
 
 | Mnemonika | Opcode |    Syntaxe     |             Chování              |
 | :-------: | :----: | :------------: | :------------------------------: |
@@ -90,32 +94,32 @@
 
 ---
 
-## 5.4. Paměťové operace
+## 5.5. Paměťové operace
 
-| Mnemonika | Opcode |       Syntaxe        |           Chování           |
-| :-------: | :----: | :------------------: | :-------------------------: |
-| **LOAD**  |  0x09  | `LOAD Rx,[Ry+#Imm]`  | Rx ← M[Ry+Imm]; Z,N; PC + 1 |
-| **STORE** |  0x0A  | `STORE Rx,[Ry+#Imm]` |   M[Ry+Imm] ← Rx; PC + 1    |
+| Mnemonika | Opcode |       Syntaxe        |            Chování            |
+| :-------: | :----: | :------------------: | :---------------------------: |
+| **LOAD**  |  0x20  | `LOAD Rx,[Ry+#Imm]`  | Rx ← M[Ry + Imm]; Z,N; PC + 1 |
+| **STORE** |  0x21  | `STORE Rx,[Ry+#Imm]` |   M[Ry + Imm] ← Rx; PC + 1    |
 
 ---
 
-## 5.5. Vstup/Výstup
+## 5.6. Vstup/Výstup
 
 | Mnemonika | Opcode |    Syntaxe     |             Chování              |
 | :-------: | :----: | :------------: | :------------------------------: |
-|  **INP**  |  0x0B  | `IN  Rx,#port` |   Rx ← I/O[port]; Z,N; PC + 1    |
-| **OUTP**  |  0x0C  | `OUT #port,Rx` | LED_row[port] ← Rx[7..0]; PC + 1 |
+|  **INP**  |  0x22  | `IN  Rx,#port` |   Rx ← I/O[port]; Z,N; PC + 1    |
+| **OUTP**  |  0x23  | `OUT #port,Rx` | LED_row[port] ← Rx[7..0]; PC + 1 |
 
 ---
 
-## 5.6. Řízení toku
+## 5.7. Řízení toku
 
 | Mnemonika | Opcode |   Syntaxe   |                   Chování                    |
 | :-------: | :----: | :---------: | :------------------------------------------: |
-| **JUMP**  |  0x10  | `JUMP #Imm` |                PC ← PC + Imm                 |
-|  **JZ**   |  0x11  |  `JZ #Imm`  | pokud Z=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
-|  **JN**   |  0x12  |  `JN #Imm`  | pokud N=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
-|  **JC**   |  0x13  |  `JC #Imm`  | pokud C=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
+| **JUMP**  |  0x24  | `JUMP #Imm` |                PC ← PC + Imm                 |
+|  **JZ**   |  0x25  |  `JZ #Imm`  | pokud Z=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
+|  **JN**   |  0x26  |  `JN #Imm`  | pokud N=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
+|  **JC**   |  0x27  |  `JC #Imm`  | pokud C=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
 
 ## 6. Princip spuštění (Fetch-Execute)
 
@@ -182,4 +186,3 @@
 - **LED matice 8×8:**
   - Port 0–7, `OUT #i,Rx` → LED_row[i] ← Rx[7..0]
   - LED registre (8×8 bit) drží stav, až další OUT
-
