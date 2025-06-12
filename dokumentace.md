@@ -55,71 +55,82 @@
 5. **Stack (implicit):** SP jako báze, offset = 0 (PUSH/POP)
 6. **I/O space:** port = Imm16[2:0] (IN/OUT)
 
-# 5. Instrukční sada
+# 5. Instrukční sada (5-bitové kódy)
+
+Veškeré kódy jsou nyní 5 bitů (0..31), MSB = bit 4 slouží pro rychlé rozlišení ALU vs. ostatní:
+
+- **IS_ALU** ⇐ (opcode[4] = 0)
+- ostatní instrukce (memory/IO/flow/data-transfer) ⇐ (opcode[4] = 1)
+
+---
 
 ## 5.1. Základní
 
-| Mnemonika | Opcode | Syntaxe |   Chování   |
-| :-------: | :----: | :-----: | :---------: |
-|  **NOP**  |  0x00  |  `NOP`  | PC ← PC + 1 |
+| Mnemonika | Opcode (bin) | Hex  | Syntaxe | Chování     |
+| :-------: | :----------: | :--: | :-----: | :---------- |
+|  **NOP**  |   `00000`    | 0x00 |  `NOP`  | PC ← PC + 1 |
 
 ---
 
-## 5.2. ALU operace (reg–reg)
+## 5.2. ALU operace
 
-| Mnemonika | Opcode |   Syntaxe   |           Chování           |
-| :-------: | :----: | :---------: | :-------------------------: |
-|  **ADD**  |  0x08  | `ADD Rx,Ry` | Rx ← Rx + Ry; Z,N,C; PC + 1 |
-|  **SUB**  |  0x09  | `SUB Rx,Ry` | Rx ← Rx − Ry; Z,N,C; PC + 1 |
+> všechny ALU instrukce mají `opcode[4]=0`. Funkční kód je v `opcode[3..0]`.  
+> **MUX.sel** (reg vs. imm) se nově **dekóduje** podle  
+> `{SHR,SHL,ROTR,ROTL,ADDI,SUBI}` vs. `{ADD,SUB}`.
 
----
+| Mnemonika | Opcode (bin) | Hex  |    Syntaxe     |            Chování             |
+| :-------: | :----------: | :--: | :------------: | :----------------------------: |
+|  **SHR**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,N,C; PC + 1  |
+|  **SHL**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,N,C; PC + 1  |
+| **ROTR**  |   `00110`    | 0x06 | `ROTR Rx,#Imm` | Rx ← Rx ROR Imm; Z,N,C; PC + 1 |
+| **ROTL**  |   `00111`    | 0x07 | `ROTL Rx,#Imm` | Rx ← Rx ROL Imm; Z,N,C; PC + 1 |
+|  **ADD**  |   `01000`    | 0x08 |  `ADD  Rx,Ry`  |  Rx ← Rx + Ry; Z,N,C; PC + 1   |
+|  **SUB**  |   `01001`    | 0x09 |  `SUB  Rx,Ry`  |  Rx ← Rx − Ry; Z,N,C; PC + 1   |
+| **ADDI**  |   `01100`    | 0x0C | `ADDI Rx,#Imm` |  Rx ← Rx + Imm; Z,N,C; PC + 1  |
+| **SUBI**  |   `01101`    | 0x0D | `SUBI Rx,#Imm` |  Rx ← Rx − Imm; Z,N,C; PC + 1  |
 
-## 5.3. ALU operace (reg–imm)
-
-| Mnemonika | Opcode |    Syntaxe     |           Chování            |
-| :-------: | :----: | :------------: | :--------------------------: |
-| **ADDI**  |  0x18  | `ADDI Rx,#Imm` | Rx ← Rx + Imm; Z,N,C; PC + 1 |
-| **SUBI**  |  0x19  | `SUBI Rx,#Imm` | Rx ← Rx − Imm; Z,N,C; PC + 1 |
-
----
-
-## 5.4. Bitové operace & rotace (immediate)
-
-| Mnemonika | Opcode |    Syntaxe     |             Chování              |
-| :-------: | :----: | :------------: | :------------------------------: |
-|  **SHR**  |  0x14  | `SHR  Rx,#Imm` |   Rx ← Rx » Imm; Z,N,C; PC + 1   |
-|  **SHL**  |  0x15  | `SHL  Rx,#Imm` |   Rx ← Rx « Imm; Z,N,C; PC + 1   |
-| **ROTR**  |  0x16  | `ROTR Rx,#Imm` | Rx ← (Rx ROR Imm); Z,N,C; PC + 1 |
-| **ROTL**  |  0x17  | `ROTL Rx,#Imm` | Rx ← (Rx ROL Imm); Z,N,C; PC + 1 |
+> **Poznámka:**
+>
+> - `IS_ALU = (opcode[4]=0)`
+> - `ALU.SEL = opcode[3..0]`
+> - `MUX.sel = 1` pro všechny ALU-immediate `{SHR, SHL, ROTR, ROTL, ADDI, SUBI}`, jinak `0`
 
 ---
 
-## 5.5. Paměťové operace
+## 5.3. Paměťové operace
 
-| Mnemonika | Opcode |       Syntaxe        |            Chování            |
-| :-------: | :----: | :------------------: | :---------------------------: |
-| **LOAD**  |  0x20  | `LOAD Rx,[Ry+#Imm]`  | Rx ← M[Ry + Imm]; Z,N; PC + 1 |
-| **STORE** |  0x21  | `STORE Rx,[Ry+#Imm]` |   M[Ry + Imm] ← Rx; PC + 1    |
-
----
-
-## 5.6. Vstup/Výstup
-
-| Mnemonika | Opcode |    Syntaxe     |             Chování              |
-| :-------: | :----: | :------------: | :------------------------------: |
-|  **INP**  |  0x22  | `IN  Rx,#port` |   Rx ← I/O[port]; Z,N; PC + 1    |
-| **OUTP**  |  0x23  | `OUT #port,Rx` | LED_row[port] ← Rx[7..0]; PC + 1 |
+| Mnemonika | Opcode (bin) | Hex  |       Syntaxe        |          Chování          |
+| :-------: | :----------: | :--: | :------------------: | :-----------------------: |
+| **LOAD**  |   `10000`    | 0x10 | `LOAD Rx,[Ry+#Imm]`  | Rx ← M[Ry+Imm]; Z,N; PC+1 |
+| **STORE** |   `10001`    | 0x11 | `STORE Rx,[Ry+#Imm]` |   M[Ry+Imm] ← Rx; PC+1    |
 
 ---
 
-## 5.7. Řízení toku
+## 5.4. Vstup/Výstup
 
-| Mnemonika | Opcode |   Syntaxe   |                   Chování                    |
-| :-------: | :----: | :---------: | :------------------------------------------: |
-| **JUMP**  |  0x24  | `JUMP #Imm` |                PC ← PC + Imm                 |
-|  **JZ**   |  0x25  |  `JZ #Imm`  | pokud Z=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
-|  **JN**   |  0x26  |  `JN #Imm`  | pokud N=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
-|  **JC**   |  0x27  |  `JC #Imm`  | pokud C=1 → PC ← PC + Imm; jinak PC ← PC + 1 |
+| Mnemonika | Opcode (bin) | Hex  |    Syntaxe     |             Chování              |
+| :-------: | :----------: | :--: | :------------: | :------------------------------: |
+|  **INP**  |   `10010`    | 0x12 | `IN  Rx,#port` |   Rx ← I/O[port]; Z,N; PC + 1    |
+| **OUTP**  |   `10011`    | 0x13 | `OUT #port,Rx` | LED_row[port] ← Rx[7..0]; PC + 1 |
+
+---
+
+## 5.5. Řízení toku
+
+| Mnemonika | Opcode (bin) | Hex  |   Syntaxe   |               Chování                |
+| :-------: | :----------: | :--: | :---------: | :----------------------------------: |
+| **JUMP**  |   `10100`    | 0x14 | `JUMP #Imm` |            PC ← PC + Imm             |
+|  **JZ**   |   `10101`    | 0x15 |  `JZ #Imm`  | pokud Z=1 → PC←PC+Imm; jinak PC←PC+1 |
+|  **JC**   |   `10110`    | 0x16 |  `JC #Imm`  | pokud C=1 → PC←PC+Imm; jinak PC←PC+1 |
+
+---
+
+## 5.6. Přenos dat
+
+| Mnemonika | Opcode (bin) | Hex  |    Syntaxe     |         Chování         |
+| :-------: | :----------: | :--: | :------------: | :---------------------: |
+|  **MOV**  |   `10111`    | 0x17 |  `MOV  Rx,Ry`  |  Rx ← Ry; PC ← PC + 1   |
+| **MOVI**  |   `11000`    | 0x18 | `MOVI Rx,#Imm` | Rx ← Imm16; PC ← PC + 1 |
 
 ## 6. Princip spuštění (Fetch-Execute)
 
