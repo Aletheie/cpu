@@ -4,7 +4,7 @@
 
 - **Datová šířka:** 16 bit
 - **Délka instrukce:** 32 bit (6+5+5+16)
-- **GPR (R1–R5):** 5 × 16 bit (R4 = SP)
+- **GPR (R1–R6):** 6 × 16 bit
 - **Temp registr pro ALU** 16 bit
 - **PC:** 16 bit, automaticky +1 nebo skok
 - **Flags:** Z (Zero), C (Carry) – 1 bit každý
@@ -17,16 +17,9 @@
 
 ## 2. Registry
 
-- **R1–R5:** obecné 16 bit (3 × 16 bit)
-- **R5 (SP):** stack pointer (16 bit)
-  - **PUSH Rx:**
-    1. `SP ← SP – 1`
-    2. `M[SP] ← Rx`
-  - **POP Rx:**
-    1. `Rx ← M[SP]`
-    2. `SP ← SP + 1`
+- **R1–R6:** obecné 16 bit (3 × 16 bit)
 - **PC:** 16 bit, adresuje ROM; po každé instrukci `PC ← PC + 1` (nebo skok)
-- **Flags (Z, N, C):** 1 bit každý
+- **Flags (Z, C):** 1 bit každý
   - `Z` = 1, pokud `ALU_out = 0`
   - `C` = CarryOut z ALU (přenesení při sčítání/odečítání)
 
@@ -40,17 +33,16 @@
 
 ```
 
-- **RegX/RegY:** kódy R1–R5
+- **RegX/RegY:** kódy R1–R6
 - **Imm16:** konstanta/offset/port
 
 ## 4. Adresní režimy
 
 1. **Reg-Reg:** oba operandy z registrů (např. ADD r1,r2)
 2. **Reg-Imm:** druhý operand z Imm16 (např. ADDI r3,#5)
-3. **Base+Offset:** adresa = RegY + sign_ext(Imm16) (LOAD/STORE)
-4. **PC-relative:** skok = PC + sign_ext(Imm16) (JUMP/JZ/JN/JC)
-5. **Stack (implicit):** SP jako báze(PUSH/POP)
-6. **I/O space:** port = Imm16[2:0] (IN/OUT)
+3. **PC-relative:** skok = PC + sign_ext(Imm16) (JUMP/JZ/JN/JC)
+4. **Stack (implicit):** SP jako báze(PUSH/POP)
+5. **I/O space:** port = adresováno registrem (IN/OUT)
 
 # 5. Instrukční sada (5-bitové kódy)
 
@@ -68,8 +60,8 @@
 | :-------: | :----------: | :--: | :------------: | :--------------------------: |
 |  **AND**  |   `00001`    | 0x01 |  `AND  Rx,Ry`  |  Rx ← Rx & Ry; Z,C; PC + 1   |
 |  **OR**   |   `00010`    | 0x02 |  `OR  Rx,Ry`   |  Rx ← Rx & Ry; Z,C; PC + 1   |
-|  **SHRI**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,C; PC + 1  |
-|  **SHLI**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,C; PC + 1  |
+| **SHRI**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,C; PC + 1  |
+| **SHLI**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,C; PC + 1  |
 | **ROTRI** |   `00110`    | 0x06 | `ROTR Rx,#Imm` | Rx ← Rx ROR Imm; Z,C; PC + 1 |
 | **ROTLI** |   `00111`    | 0x07 | `ROTL Rx,#Imm` | Rx ← Rx ROL Imm; Z,C; PC + 1 |
 |  **ADD**  |   `01000`    | 0x08 |  `ADD  Rx,Ry`  |  Rx ← Rx + Ry; Z,C; PC + 1   |
@@ -114,65 +106,72 @@
 |  **MOV**  |   `10111`    | 0x17 |  `MOV  Rx,Ry`  |  Rx ← Ry; PC + 1   |
 | **MOVI**  |   `11000`    | 0x18 | `MOVI Rx,#Imm` | Rx ← Imm16; PC + 1 |
 
-## 6. Princip spuštění (Fetch-Execute)
+## 7. Princip spouštění instrukcí v CPU
 
-1. **Fetch:**
+### 7.1 Kde leží strojový kód
 
-   - PC → ROM → Instrukce (24 bit)
-   - (Volitelně IR ← rom_out)
+- **Program ROM (32 bit slova):** Veškerý strojový kód se před synthézou/naprogramováním uloží do interní ROM.
+- **Adresování:** Každé slovo má 16-bitovou adresu (stejně dlouhou jako registr **PC**).
+- **Nahrání kódu:** Při konfiguraci FPGA / ASIC se ROM naplní obsahem hex/mif. Během běhu už ROM pouze čteme – není zapisovatelná.
 
-2. **Decode:**
+### 7.2 Inicializace a výchozí adresa
 
-   - Splitter → opcode, RegX, RegY, Imm16
-   - Dekodér → jednoznačná instrukce
-   - Příznaky (Z,N,C) + dekodér → řídicí signály
+- **RESET:** Po resetu se **PC** nastaví na `0x0000` (první instrukce programu).
+- Pro víc programů/bootloader, stačí změnit resetovou hodnotu PC nebo přidat úvodní skok.
 
-3. **Read Operands:**
+### 7.3 Načítání instrukcí (Fetch)
 
-   - RegValX = GPR[RegX]
-   - RegValY = GPR[RegY]
-   - Imm_ext16 = sign_extend(Imm16)
+| Krok             | Signál/registr              | Co se děje                                                                  |
+| ---------------- | --------------------------- | --------------------------------------------------------------------------- |
+| **1. Fetch**     | `PC → ROM`                  | Z ROM se vyčte celé **32-bitové** slovo instrukce.                          |
+| **2. Increment** | `PC ← PC + 1`               | Pokud aktuální instrukce **není skok**, PC se inkrementuje o 1 (slovo).     |
+| **3. Skoky**     | `PC ← PC + sign_ext(Imm16)` | U `JMP/JZ/JC` se místo inkrementu přičte podepsaný offset z pole **Imm16**. |
 
-4. **Execute:**
+> Všechny instrukce jsou jedno-slovní (32 bit), takže se nikdy nemusí číst „druhé slovo“. Řadič tedy jednoduše střídá cyklus _fetch → decode → execute_ bez speciální logiky pro víceslovní opkódy.
 
-   - A = (ALU_A_sel=0)? RegValX : PC
-   - B = (ALU_B_sel=0)? RegValY : Imm_ext16
-   - Pokud Sub=1: B ← ¬B, Cin=1; jinak Cin=0
-   - ALU_out = A ± B, CarryOut → C_flag, Z_flag, N_flag
+### 7.4 Tok instrukcí během běhu
 
-5. **Memory / I/O:**
+1. **Fetch** – viz výše.
+2. **Decode** – instrukce se rozkouskuje na `opcode`, `RegX`, `RegY`, `Imm16`.
+3. **Execute / Memory / I/O** – ALU, RAM, I/O (podle opcode).
+4. **Write-back** – výsledky se uloží do registrů/flagů.
+5. **PC update** – už hotovo z kroku 1 / 3, takže další fetch.
 
-   - Pokud MemRead=1: RAM_out = RAM[ALU_out]
-   - Pokud MemWrite=1: RAM[ALU_out] ← RegValX
-   - Pokud IORead=1: IO_In_Data = (Imm16[0]=0)? Button : Joystick
-   - Pokud IOWrite=1: LED_row[Imm16[2..0]] ← RegValX[7:0]
+## 8. Features (HW podpora)
 
-6. **Writeback:**
+### 8.1 Stack & volání funkcí
 
-   - Pokud RegWrite=1:
-     - DataWB = MUX_Writeback(ALU_out, RAM_out, IO_In_Data)
-     - Cílový registr = dekodér(RegDst_mux)
-     - GPR[target] ← DataWB
-   - Pokud FlagWrite=1:
-     - Z ← Z_flag, N ← N_flag, C ← C_flag
-
-7. **Update PC:**
-
-   - PC ← (PCSrc=1)? ALU_out : PC + 1
-
-8. **Další cyklus.**
+- **HW stack v RAM**
+- **Volání funkce (konvence):**
+  1. **Před voláním**: volající uloží potřebné registry (R1–R6) na stack (`STORE Rx,[SP]`, `SUBI SP,#2`).
+  2. **Skok** na začátek funkce (`JMP` / `JZ` / `JC`).
+  3. **Návratová adresa** se ukládá ručně (typicky na stack) – dedikované `CALL/RET` instrukce nejsou, ale lze je nahradit sekvencí `MOV Rx,PC`, `STORE`, … a později `LOAD PC,[SP]`.
+  4. **Po návratu**: volající obnoví registry (`LOAD`, `ADDI SP,#2`).
 
 ---
 
-## 7. Periferie
+### 8.2 Adresní režimy × instrukce
 
-- **4 Buttony (1 bit):**
+| Režim           | Instrukce (skupiny)                                                     | Poznámka                              |
+| --------------- | ----------------------------------------------------------------------- | ------------------------------------- |
+| **Reg-Reg**     | `AND`, `OR`, `ADD`, `SUB`, `MOV`, `STORE`, `LOAD`                       | oba operandy registry                 |
+| **Reg-Imm**     | `SHRI`, `SHLI`, `ROTRI`, `ROTLI`, `ADDI`, `SUBI`, `MOVI`, `INP`, `OUTP` | druhý operand/funkční kód v **Imm16** |
+| **PC-relative** | `JUMP`, `JZ`, `JC`                                                      | offset = sign-ext(**Imm16**)          |
+| **Stack**       | všechny paměťové operace používající **SP**                             | `LOAD/STORE Rx,[SP±offset]`           |
+| **I/O space**   | `INP`, `OUTP`                                                           | port číslo v **Imm16**                |
 
-  - Port 0 = nic
-  - Port 1 = nahoru
-  - Port 2 = vlevo
-  - Port 3 = dolů
-  - Port 4 = vpravo
+---
 
-- **LED matice 3×16:**
-  - Port 1-3
+### 8.3 Periferie & komunikace
+
+| Periferie            | Porty |  Čtení/Zápis  | Jak na to v kódu                                    | Co udělá CPU za tebe                                                                     |
+| -------------------- | :---: | :-----------: | --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| **Tlačítka** (1 bit) |  1-4  | jen **read**  | `INP R1,#1` – stav tlačítka „nahoru“ do **R1**      | Aktivuje **IORead**, přivede vstup na sběrnici, výsledek se zapíše do cílového registru. |
+| **LED matice 3×16**  |  1-3  | jen **write** | `OUTP R2,#2` – odešle 16 bit sloupec na 2. řádek    | CPU na 1 T-cyklus vystaví **RegValX[7:0]** na io_data_out a nastaví **IOWrite**.         |
+| **LED dioda**        |   4   | jen **write** | `OUTP R3,#4` – zapne/vypne LED podle bit 0 v **R3** | Totéž co u matice, jen vodič vede přímo na LEDku.                                        |
+
+Interně probíhá přístup k periferiím paralelně s ALU operacemi:
+
+1. **Decode** rozpozná `INP/OUTP` a nastaví `IORead`/`IOWrite`.
+2. **Execute** vynechá RAM; adresa periférie = `Imm16[4:0]`.
+3. **Write-back** (jen pro `INP`) uloží přečtenou hodnotu do registru, nastaví příznak **Z**.
