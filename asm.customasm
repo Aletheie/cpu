@@ -23,6 +23,12 @@
     nop
       => 0b000000`6 @ 0b00000`5 @ 0b00000`5 @ 0b0000000000000000`16
 
+    and   { r: reg }, { v: reg }
+      => 0b000010`6 @ r`5 @ v`5 @ 0b0000000000000000`16
+
+    or    { r: reg }, { v: reg }
+      => 0b000011`6 @ r`5 @ v`5 @ 0b0000000000000000`16
+
     shri  { r: reg }, { val: i16 }
       => 0b000100`6 @ r`5 @ 0b00000`5 @ val`16
 
@@ -77,34 +83,81 @@
 
 #bank main
 
-
     ; init: sloupec=2, řádek=1 (bit0)
-    movi  r1, 2       ; r1 = sloupec
+    movi  r1, 2       ; r1 = sloupec (1–3)
     movi  r2, 1       ; r2 = řádková maska (bit0 = první řádek)
 
 loop:
     outp  r2, r1      ; zobraz tečku
 
-    ; tlačítko NAHORU? (port 1)
-    movi  r4, 1       ; r4 = port 1
-    inp   r3, r4      ; načti stav tlačítka do r3
-    mov   r5, r3      
-    subi  r5, 1       ; r5 = r3-1 → Z=1, pokud je stisknuto
-    jz    do_up       ; skoč, pokud nahoru
+    ; NAHORU? (port 1)
+    movi  r4, 1
+    inp   r3, r4
+    mov   r5, r3
+    subi  r5, 1       ; Z=1, pokud stisknuto
+    jz    do_up
 
-    ; tlačítko DOLŮ? (port 3)
-    movi  r4, 3       ; r4 = port 3
-    inp   r3, r4      ; načti stav tlačítka do r3
-    mov   r5, r3      
-    subi  r5, 1       ; r5 = r3-1 → Z=1, pokud je stisknuto
-    jz    do_down     ; skoč, pokud dolů
+    ; DOLŮ? (port 3)
+    movi  r4, 3
+    inp   r3, r4
+    mov   r5, r3
+    subi  r5, 1
+    jz    do_down
 
-    jmp   loop        ; jinak zpět do smyčky
+    ; VLEVO? (port 2)
+    movi  r4, 2
+    inp   r3, r4
+    mov   r5, r3
+    subi  r5, 1
+    jz    do_left
+
+    ; VPRAVO? (port 4)
+    movi  r4, 4
+    inp   r3, r4
+    mov   r5, r3
+    subi  r5, 1
+    jz    do_right
+
+    jmp   loop
 
 do_up:
-    shli  r2, 1       ; posun masky o řádek nahoru  
-    jmp   loop        ; a opakuj
+    mov   r5, r2      ; záloha řádku
+    shli  r2, 1       ; řádek↑
+    jz    restore_up  ; pokud mimo → obnov
+    jmp   loop
+
+restore_up:
+    mov   r2, r5
+    jmp   loop
 
 do_down:
-    shri  r2, 1       ; posun masky o řádek dolů  
-    jmp   loop        ; a opakuj
+    mov   r5, r2
+    shri  r2, 1       ; řádek↓
+    jz    restore_down
+    jmp   loop
+
+restore_down:
+    mov   r2, r5
+    jmp   loop
+
+do_left:
+    mov   r5, r1
+    subi  r1, 1       ; sloupec←
+    jz    restore_left
+    jmp   loop
+
+restore_left:
+    mov   r1, r5
+    jmp   loop
+
+do_right:
+    mov   r5, r1
+    addi  r1, 1       ; sloupec→
+    mov   r3, r1
+    subi  r3, 4       ; kontrola >3
+    jz    restore_right
+    jmp   loop
+
+restore_right:
+    mov   r1, r5
+    jmp   loop
