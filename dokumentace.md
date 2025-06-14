@@ -18,8 +18,8 @@
 
 ## 2. Registry
 
-- **R0–R3:** obecné 16 bit (3 × 16 bit)
-- **R4 (SP):** stack pointer (16 bit)
+- **R1–R5:** obecné 16 bit (3 × 16 bit)
+- **R5 (SP):** stack pointer (16 bit)
   - **PUSH Rx:**
     1. `SP ← SP – 1`
     2. `M[SP] ← Rx`
@@ -35,7 +35,6 @@
 ## 3. Formát instrukce (32 bit)
 
 ```
-
 [31…26] opcode (6 bit)
 [25…21] RegX  (5 bit)
 [20…16] RegY  (5 bit)
@@ -43,7 +42,7 @@
 
 ```
 
-- **RegX/RegY:** kódy R0–R4
+- **RegX/RegY:** kódy R1–R5
 - **Imm16:** konstanta/offset/port
 
 ## 4. Adresní režimy
@@ -56,13 +55,6 @@
 6. **I/O space:** port = Imm16[2:0] (IN/OUT)
 
 # 5. Instrukční sada (5-bitové kódy)
-
-Veškeré kódy jsou nyní 5 bitů (0..31), MSB = bit 4 slouží pro rychlé rozlišení ALU vs. ostatní:
-
-- **IS_ALU** ⇐ (opcode[4] = 0)
-- ostatní instrukce (memory/IO/flow/data-transfer) ⇐ (opcode[4] = 1)
-
----
 
 ## 5.1. Základní
 
