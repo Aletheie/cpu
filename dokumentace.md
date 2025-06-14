@@ -82,18 +82,12 @@ Veškeré kódy jsou nyní 5 bitů (0..31), MSB = bit 4 slouží pro rychlé roz
 | :-------: | :----------: | :--: | :------------: | :----------------------------: |
 |  **SHR**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,N,C; PC + 1  |
 |  **SHL**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,N,C; PC + 1  |
-| **ROTR**  |   `00110`    | 0x06 | `ROTR Rx,#Imm` | Rx ← Rx ROR Imm; Z,N,C; PC + 1 |
-| **ROTL**  |   `00111`    | 0x07 | `ROTL Rx,#Imm` | Rx ← Rx ROL Imm; Z,N,C; PC + 1 |
+| **ROTRI**  |   `00110`    | 0x06 | `ROTR Rx,#Imm` | Rx ← Rx ROR Imm; Z,N,C; PC + 1 |
+| **ROTLI**  |   `00111`    | 0x07 | `ROTL Rx,#Imm` | Rx ← Rx ROL Imm; Z,N,C; PC + 1 |
 |  **ADD**  |   `01000`    | 0x08 |  `ADD  Rx,Ry`  |  Rx ← Rx + Ry; Z,N,C; PC + 1   |
 |  **SUB**  |   `01001`    | 0x09 |  `SUB  Rx,Ry`  |  Rx ← Rx − Ry; Z,N,C; PC + 1   |
 | **ADDI**  |   `01100`    | 0x0C | `ADDI Rx,#Imm` |  Rx ← Rx + Imm; Z,N,C; PC + 1  |
 | **SUBI**  |   `01101`    | 0x0D | `SUBI Rx,#Imm` |  Rx ← Rx − Imm; Z,N,C; PC + 1  |
-
-> **Poznámka:**
->
-> - `IS_ALU = (opcode[4]=0)`
-> - `ALU.SEL = opcode[3..0]`
-> - `MUX.sel = 1` pro všechny ALU-immediate `{SHR, SHL, ROTR, ROTL, ADDI, SUBI}`, jinak `0`
 
 ---
 
@@ -101,8 +95,8 @@ Veškeré kódy jsou nyní 5 bitů (0..31), MSB = bit 4 slouží pro rychlé roz
 
 | Mnemonika | Opcode (bin) | Hex  |       Syntaxe        |          Chování          |
 | :-------: | :----------: | :--: | :------------------: | :-----------------------: |
-| **LOAD**  |   `10000`    | 0x10 | `LOAD Rx,[Ry+#Imm]`  | Rx ← M[Ry+Imm]; Z,N; PC+1 |
-| **STORE** |   `10001`    | 0x11 | `STORE Rx,[Ry+#Imm]` |   M[Ry+Imm] ← Rx; PC+1    |
+| **LOAD**  |   `10000`    | 0x10 | `LOAD Rx,[Ry]`  | Rx ← M[Ry]; Z,N; PC+1 |
+| **STORE** |   `10001`    | 0x11 | `STORE Rx,[Ry]` |   M[Ry] ← Rx; PC+1    |
 
 ---
 

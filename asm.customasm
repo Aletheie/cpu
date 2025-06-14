@@ -1,0 +1,110 @@
+
+#bankdef main
+{
+    #bits 32
+    #addr 0x0000
+    #size 0xffff
+    #outp 0
+}
+
+#bank main
+
+#subruledef reg
+{
+    r1 => 0x1
+    r2 => 0x2
+    r3 => 0x3
+    r4 => 0x4
+    r5 => 0x5
+}
+
+#ruledef
+{
+    nop
+      => 0b000000`6 @ 0b00000`5 @ 0b00000`5 @ 0b0000000000000000`16
+
+    shri  { r: reg }, { val: i16 }
+      => 0b000100`6 @ r`5 @ 0b00000`5 @ val`16
+
+    shli  { r: reg }, { val: i16 }
+      => 0b000101`6 @ r`5 @ 0b00000`5 @ val`16
+
+    rotri { r: reg }, { val: i16 }
+      => 0b000110`6 @ r`5 @ 0b00000`5 @ val`16
+
+    rotli { r: reg }, { val: i16 }
+      => 0b000111`6 @ r`5 @ 0b00000`5 @ val`16
+
+    add   { r: reg }, { v: reg }
+      => 0b001000`6 @ r`5 @ v`5 @ 0b0000000000000000`16
+
+    sub   { r: reg }, { v: reg }
+      => 0b001001`6 @ r`5 @ v`5 @ 0b0000000000000000`16
+
+    addi  { r: reg }, { val: i16 }
+      => 0b001100`6 @ r`5 @ 0b00000`5 @ val`16
+
+    subi  { r: reg }, { val: i16 }
+      => 0b001101`6 @ r`5 @ 0b00000`5 @ val`16
+
+    load  { dst: reg }, { base: reg }
+      => 0b010000`6 @ dst`5 @ base`5 @ 0b0000000000000000`16
+
+    store { src: reg }, { addr: reg }
+      => 0b010001`6 @ src`5 @ addr`5 @ 0b0000000000000000`16
+
+    inp   { dst: reg }, { port: reg }
+      => 0b010010`6 @ dst`5 @ port`5 @ 0b0000000000000000`16
+
+    outp  { src: reg }, { port: reg }
+      => 0b010011`6 @ src`5 @ port`5 @ 0b0000000000000000`16
+
+    jmp  { off: i16 }
+      => 0b010100`6 @ 0b00000`5 @ 0b00000`5 @ off`16
+
+    jz   { off: i16 }
+      => 0b010101`6 @ 0b00000`5 @ 0b00000`5 @ off`16
+
+    jc   { off: i16 }
+      => 0b010110`6 @ 0b00000`5 @ 0b00000`5 @ off`16
+
+    mov   { dst: reg }, { src: reg }
+      => 0b010111`6 @ dst`5 @ src`5 @ 0b0000000000000000`16
+
+    movi  { dst: reg }, { val: i16 }
+      => 0b011000`6 @ dst`5 @ 0b00000`5 @ val`16
+}
+
+#bank main
+
+
+    ; init: sloupec=2, řádek=1 (bit0)
+    movi  r1, 2       ; r1 = sloupec
+    movi  r2, 1       ; r2 = řádková maska (bit0 = první řádek)
+
+loop:
+    outp  r2, r1      ; zobraz tečku
+
+    ; tlačítko NAHORU? (port 1)
+    movi  r4, 1       ; r4 = port 1
+    inp   r3, r4      ; načti stav tlačítka do r3
+    mov   r5, r3      
+    subi  r5, 1       ; r5 = r3-1 → Z=1, pokud je stisknuto
+    jz    do_up       ; skoč, pokud nahoru
+
+    ; tlačítko DOLŮ? (port 3)
+    movi  r4, 3       ; r4 = port 3
+    inp   r3, r4      ; načti stav tlačítka do r3
+    mov   r5, r3      
+    subi  r5, 1       ; r5 = r3-1 → Z=1, pokud je stisknuto
+    jz    do_down     ; skoč, pokud dolů
+
+    jmp   loop        ; jinak zpět do smyčky
+
+do_up:
+    shli  r2, 1       ; posun masky o řádek nahoru  
+    jmp   loop        ; a opakuj
+
+do_down:
+    shri  r2, 1       ; posun masky o řádek dolů  
+    jmp   loop        ; a opakuj
