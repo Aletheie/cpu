@@ -66,10 +66,10 @@
 
 | Mnemonika | Opcode (bin) | Hex  |    Syntaxe     |           Chování            |
 | :-------: | :----------: | :--: | :------------: | :--------------------------: |
-|  **AND**  |   `00010`    | 0x02 |  `AND  Rx,Ry`  |  Rx ← Rx & Ry; Z,C; PC + 1   |
-|  **OR**   |   `00011`    | 0x03 |  `OR  Rx,Ry`   |  Rx ← Rx & Ry; Z,C; PC + 1   |
-|  **SHR**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,C; PC + 1  |
-|  **SHL**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,C; PC + 1  |
+|  **AND**  |   `00001`    | 0x01 |  `AND  Rx,Ry`  |  Rx ← Rx & Ry; Z,C; PC + 1   |
+|  **OR**   |   `00010`    | 0x02 |  `OR  Rx,Ry`   |  Rx ← Rx & Ry; Z,C; PC + 1   |
+|  **SHRI**  |   `00100`    | 0x04 | `SHR  Rx,#Imm` |  Rx ← Rx » Imm; Z,C; PC + 1  |
+|  **SHLI**  |   `00101`    | 0x05 | `SHL  Rx,#Imm` |  Rx ← Rx « Imm; Z,C; PC + 1  |
 | **ROTRI** |   `00110`    | 0x06 | `ROTR Rx,#Imm` | Rx ← Rx ROR Imm; Z,C; PC + 1 |
 | **ROTLI** |   `00111`    | 0x07 | `ROTL Rx,#Imm` | Rx ← Rx ROL Imm; Z,C; PC + 1 |
 |  **ADD**  |   `01000`    | 0x08 |  `ADD  Rx,Ry`  |  Rx ← Rx + Ry; Z,C; PC + 1   |
