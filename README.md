@@ -32,6 +32,8 @@ Custom educational 16-bit CPU design implemented in Logisim, including ALU, cont
 
 - [Watch / download demo video](video.mp4)
 
+https://github.com/user-attachments/assets/b5a13d79-0106-4332-a82c-5b3f83250787
+
 ## Project Files
 
 - [Detailed CPU documentation](dokumentace.md)
