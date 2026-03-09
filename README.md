@@ -13,13 +13,20 @@ Custom educational 16-bit CPU design implemented in Logisim, including ALU, cont
 ## Architecture
 
 ### ALU
+
 ![ALU](alu.png)
 
 ### CPU
+
 ![CPU](cpu.png)
 
 ### ALU Components
+
 ![ALU Components](alu_components.png)
+
+### Machine Code
+
+![Machine Code](machine_code.png)
 
 ## Game Demo
 
@@ -29,6 +36,7 @@ Custom educational 16-bit CPU design implemented in Logisim, including ALU, cont
 
 - [Detailed CPU documentation](dokumentace.md)
 - [Program listing / machine code output](program.txt)
+- [Machine code spreadsheet](strojovy_kod.xlsx)
 - `ALU.circ` – ALU circuit
 - `CPU.circ` – CPU top-level circuit
 - `program.asm` – assembly source
@@ -38,4 +46,3 @@ Custom educational 16-bit CPU design implemented in Logisim, including ALU, cont
 1. Open `CPU.circ` in Logisim.
 2. Load program data into ROM (from your assembled output).
 3. Run simulation and observe register/memory/I/O behavior.
-
